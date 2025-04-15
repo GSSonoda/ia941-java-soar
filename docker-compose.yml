@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  coppelia-sim:
+    image: brgsil/ws3d-coppelia
+    container_name: coppelia-sim
+    environment:
+      - DISPLAY=172.23.48.1:0
+    network_mode: "host"
+    devices:
+      - "/dev/snd"
+    privileged: true
+    volumes:
+      - /home/gssonoda/.Xauthority:/root/.Xauthority
+    ports:
+      - "4011:4011"
+    tty: true
