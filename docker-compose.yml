@@ -5,7 +5,7 @@ services:
     image: brgsil/ws3d-coppelia
     container_name: coppelia-sim
     environment:
-      - DISPLAY=172.23.48.1:0
+      - DISPLAY=:0
     network_mode: "host"
     devices:
       - "/dev/snd"
