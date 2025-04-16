@@ -240,6 +240,27 @@ sp {apply*avoidBrick
 
 ##################  OPERATORS PREFERENCES AND IMPASSE SOLVE  ###################
 
+# @auto g.sonoda
+# Subir priodade do deliver
+# deliverLeaflet vs moveJewel/moveFood/eatFood/getJewel/avoidBrick/wander - deliverLeaflet always wins
+sp {pref*deliverLeaflet*others
+(state <s> ^operator <o> + 
+              <o2> +)
+(<o> ^name deliverLeaflet)
+(<o2> ^name << moveJewel moveFood eatFood getJewel avoidBrick wander >>)
+-->
+(<s> ^operator <o> > <o2>)
+(write |deliverLeaflet vs others - deliverLeaflet wins| (crlf)) }
+
+sp {pref*deliverLeaflet*deliverLeaflet
+(state <s> ^operator <o> + 
+              <o2> +)
+(<o> ^name deliverLeaflet)
+(<o2> ^name deliverLeaflet)
+-->
+(<s> ^operator <o> = <o2>)
+(write |deliverLeaflet vs deliver - deliverLeaflet wins| (crlf)) }
+
 #JEWEL
 
 # Move Jewel or Move Food vs Get Jewel - getJewel wins
@@ -470,3 +491,44 @@ sp {halt*condition
    (write |The command: | <attr> | was issued! |)
    (interrupt) 
 }     
+
+
+# @autor g.sonoda
+# DELIVER
+
+sp {propose*deliver*leaflet*L1
+   (state <s> ^io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^LEAFLET.L1READY <l1> 1.0)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name deliverLeaflet)
+}
+
+sp {propose*deliver*leaflet*L2
+   (state <s> ^io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^LEAFLET.L2READY <l2> 1.0)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name deliverLeaflet)
+}
+
+sp {propose*deliver*leaflet*L3
+   (state <s> ^io.input-link <il>)
+   (<il> ^CREATURE <creature>)
+   (<creature> ^LEAFLET.L3READY <l3> 1.0)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name deliverLeaflet)
+}
+
+sp {apply*deliver*leaflet
+   (state <s> ^operator <o>
+              ^io <io>)
+   (<io> ^output-link <ol>)
+   (<o> ^name deliverLeaflet)
+-->
+   (<ol> ^DELIVER <command>)
+   (<command> ^execute true)
+}
