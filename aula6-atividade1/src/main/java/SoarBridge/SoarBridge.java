@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.Phase;
 import org.jsoar.kernel.RunType;
@@ -28,6 +30,8 @@ import ws3dproxy.CommandExecException;
 import ws3dproxy.CommandUtility;
 import ws3dproxy.model.Creature;
 import ws3dproxy.model.Thing;
+import ws3dproxy.model.Leaflet;
+import ws3dproxy.model.Bag;
 import ws3dproxy.util.Constants;
 
 /**
@@ -52,8 +56,16 @@ public class SoarBridge
     
     Environment env;
     public Creature c;
+    public Bag bag = new Bag(0, 0, 0, 0, new ArrayList<Integer>());
     public String input_link_string = "";
     public String output_link_string = "";
+
+    private Map<String, Thing> knownFoods = new HashMap<>();
+    private Map<String, Thing> knownJewels = new HashMap<>();
+    private Leaflet l1;
+    private Leaflet l2;
+    private Leaflet l3;
+
 
     /**
      * Constructor class
@@ -130,7 +142,41 @@ public class SoarBridge
         }
         return itemType;
     }
+
+    /**
+     *
+     * @author g.sonoda
+     * Aula 6 - Atividade 1
+     * Verificar se a bag da possui cristais suficientes para completar aquele leaflet
+     */
+    private boolean bagSatisfiesLeaflet(Bag bag, Leaflet leaflet) {
+        if (bag == null) {
+            System.out.println("BAG NULL");
+            return false;
+        }
+        HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
+        for (Map.Entry<String, Integer[]> entry : leaflet_map.entrySet()) {
+            String type = entry.getKey();
+            int requiredAmount = entry.getValue()[0]; // total necessário
+            int availableInBag = bag.getNumberCrystalPerType(type); // quantidade na bag
     
+            if (availableInBag < requiredAmount) {
+                return false;
+            }
+        }
+    
+        return true;
+    }
+
+    /**
+     *
+     * @author g.sonoda
+     * Aula 6 - Atividade 1
+     * Verificar se a cor está presente em algum leaflet
+     */
+    private boolean isColorInLeaflets(String color) {
+        return l1.getItems().containsKey(color) || l2.getItems().containsKey(color) || l3.getItems().containsKey(color);
+    }
     
     /**
      * Create the WMEs at the InputLink of SOAR
@@ -139,6 +185,10 @@ public class SoarBridge
     {
         //SymbolFactory sf = agent.getSymbols();
         Creature c = env.getCreature();
+        
+        l1 = c.getLeaflets().get(0);
+        l2 = c.getLeaflets().get(1);
+        l3 = c.getLeaflets().get(2);        
         inputLink = agent.getInputOutput().getInputLink();
         try
         {
@@ -166,19 +216,91 @@ public class SoarBridge
               // Create Visual Sensors
               Identifier visual = CreateIdWME(creatureSensor, "VISUAL");
               List<Thing> thingsList = (List<Thing>) c.getThingsInVision();
+            /**
+             *
+             * @author g.sonoda
+             * Aula 6 - Atividade 1
+             * Adicionar itens na memoria
+             */
               for (Thing t : thingsList) 
                 {
-                 Identifier entity = CreateIdWME(visual, "ENTITY");
-                 CreateFloatWME(entity, "DISTANCE", GetGeometricDistanceToCreature(t.getX1(),t.getY1(),t.getX2(),t.getY2(),c.getPosition().getX(),c.getPosition().getY()));                                                    
-                 CreateFloatWME(entity, "X", t.getX1());
-                 CreateFloatWME(entity, "Y", t.getY1());
-                 CreateFloatWME(entity, "X2", t.getX2());
-                 CreateFloatWME(entity, "Y2", t.getY2());
-                 CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
-                 CreateStringWME(entity, "NAME", t.getName());
-                 CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));                                                    
+                    Identifier entity = CreateIdWME(visual, "ENTITY");
+                    CreateFloatWME(entity, "DISTANCE", GetGeometricDistanceToCreature(t.getX1(),t.getY1(),t.getX2(),t.getY2(),c.getPosition().getX(),c.getPosition().getY()));                                                    
+                    CreateFloatWME(entity, "X", t.getX1());
+                    CreateFloatWME(entity, "Y", t.getY1());
+                    CreateFloatWME(entity, "X2", t.getX2());
+                    CreateFloatWME(entity, "Y2", t.getY2());
+                    CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
+                    CreateStringWME(entity, "NAME", t.getName());
+                    CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));
+                    String type = getItemType(t.getCategory());
+                    String name = t.getName();                    
+                    if ("FOOD".equals(type)) {
+                        knownFoods.putIfAbsent(name, t); // armazena só se ainda não conhece
+                    } else if ("JEWEL".equals(type)) {
+                        knownJewels.putIfAbsent(name, t);
+                    }                       
                 }
-            }
+                Identifier creatureLongMemory = CreateIdWME(creature, "LONGMEMORY");
+                Identifier closestFoodWME = CreateIdWME(creatureLongMemory, "CLOSESTFOOD");
+                Identifier closestJewelWME = CreateIdWME(creatureLongMemory, "CLOSESTJEWEL");
+
+                double closestFoodDistance = Double.MAX_VALUE;
+                double closestJewelDistance = Double.MAX_VALUE;
+                Thing closestFood = null;
+                Thing closestJewel = null;
+
+
+                for (Thing food : knownFoods.values()) {
+                    double foodDistance = GetGeometricDistanceToCreature(food.getX1(), food.getY1(), food.getX2(), food.getY2(), c.getPosition().getX(), c.getPosition().getY());
+                    Identifier foodWME = CreateIdWME(creatureLongMemory, "FOOD");
+                    CreateStringWME(foodWME, "NAME", food.getName());
+                    CreateFloatWME(foodWME, "X", (float) food.getX1());
+                    CreateFloatWME(foodWME, "Y", (float) food.getY1());
+                    if (foodDistance < closestFoodDistance) {
+                        closestFoodDistance = foodDistance;
+                        closestFood = food;
+                    }
+                }
+                for (Thing jewel : knownJewels.values()) {
+                    double jewelDistance = GetGeometricDistanceToCreature(jewel.getX1(), jewel.getY1(), jewel.getX2(), jewel.getY2(), c.getPosition().getX(), c.getPosition().getY());
+                    String color = Constants.getColorName(jewel.getMaterial().getColor());
+                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "JEWELS");
+                    CreateStringWME(jewelsWME, "NAME", jewel.getName());
+                    CreateFloatWME(jewelsWME, "X", (float) jewel.getX1());
+                    CreateFloatWME(jewelsWME, "Y", (float) jewel.getY1());
+                    CreateStringWME(jewelsWME, "COLOR", color);
+                    
+                    if (!isColorInLeaflets(color)) {
+                        System.out.println("A Joia não está no Leaflet | color: " + color);
+                        continue;
+                    }
+                
+                    if (jewelDistance < closestJewelDistance ) {
+                        closestJewelDistance = jewelDistance;
+                        closestJewel = jewel;
+                    }
+                }
+                if (closestFood != null) {
+                    CreateStringWME(closestFoodWME, "NAME", closestFood.getName());
+                    CreateFloatWME(closestFoodWME, "X", (float) closestFood.getX1());
+                    CreateFloatWME(closestFoodWME, "Y", (float) closestFood.getY1());
+                }
+                if (closestJewel != null) {
+
+                    CreateStringWME(closestJewelWME, "NAME", closestJewel.getName());
+                    CreateFloatWME(closestJewelWME, "X", (float) closestJewel.getX1());
+                    CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
+                    CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
+                }
+                System.out.println("Closest food: " + closestFood.getName());
+                System.out.println("Closest jewel: " + closestJewel.getName());
+                
+                bag = c.updateBag();
+                Identifier leaflet = CreateIdWME(creature, "LEAFLET");
+                CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
+                CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
+                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);         }
         }
         catch (Exception e)
         {
@@ -325,6 +447,10 @@ public class SoarBridge
                                 commandList.add(command);
                             }
                             break;
+                        case DELIVER:
+                            command = new Command(Command.CommandType.DELIVER);
+                            commandList.add(command);
+                            break;
 
                         default:
                             break;
@@ -412,6 +538,9 @@ public class SoarBridge
                     case EAT:
                         processEatCommand((CommandEat)command.getCommandArgument());
                     break;
+                    case DELIVER:
+                        processDeliverCommand((CommandDeliver)command.getCommandArgument());
+                    break;
 
                     default:System.out.println("Nenhum comando definido ...");
                         // Do nothing
@@ -454,6 +583,13 @@ public class SoarBridge
         if (soarCommandGet != null)
         {
             c.putInSack(soarCommandGet.getThingName());
+            /**
+             *
+             * @author g.sonoda
+             * Aula 6 - Atividade 1
+             * Remover Joia da memoria
+             */
+            knownJewels.remove(soarCommandGet.getThingName());
         }
         else
         {
@@ -470,13 +606,40 @@ public class SoarBridge
         if (soarCommandEat != null)
         {
             c.eatIt(soarCommandEat.getThingName());
+            /**
+             *
+             * @author g.sonoda
+             * Aula 6 - Atividade 1
+             * Remover Joia da memoria
+             */
+            knownFoods.remove(soarCommandEat.getThingName());
         }
         else
         {
             logger.severe("Error processing processMoveCommand");
         }
     }
-    
+
+    /**
+     * @autor g.sonoda
+     * Trocar joias por pontos
+     */
+    private void processDeliverCommand(CommandDeliver soarCommandDeliver) throws CommandExecException {
+        if (bagSatisfiesLeaflet(bag, l1)){
+            c.deliverLeaflet(l1.getID().toString());
+            bag = c.updateBag();
+        }
+        if (bagSatisfiesLeaflet(bag, l2)){
+            c.deliverLeaflet(l2.getID().toString());
+            bag = c.updateBag();
+        }
+        if (bagSatisfiesLeaflet(bag, l3)){
+            c.deliverLeaflet(l3.getID().toString());
+            bag = c.updateBag();
+        }
+        
+    }
+
     /**
      * Try Parse a Float Element
      * @param value Float Value
