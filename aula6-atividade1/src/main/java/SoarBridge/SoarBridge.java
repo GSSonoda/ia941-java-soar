@@ -56,10 +56,14 @@ public class SoarBridge
     
     Environment env;
     public Creature c;
-    public Bag bag = new Bag(0, 0, 0, 0, new ArrayList<Integer>());
     public String input_link_string = "";
     public String output_link_string = "";
 
+    /**
+     * @autor g.sonoda
+     * Inicialização de variaveis uteis para a aula 6 - atividade 1
+     */
+    private Bag bag = new Bag(0, 0, 0, 0, new ArrayList<Integer>());
     private Map<String, Thing> knownFoods = new HashMap<>();
     private Map<String, Thing> knownJewels = new HashMap<>();
     private Leaflet l1;
@@ -177,7 +181,15 @@ public class SoarBridge
     private boolean isColorInLeaflets(String color) {
         return l1.getItems().containsKey(color) || l2.getItems().containsKey(color) || l3.getItems().containsKey(color);
     }
-    
+
+    /**
+     * @autor g.sonoda
+     * Incluir novos InputLinks como
+     * LONGMEMORY
+     * LEAFLEAT
+     * CLOSESTFOOD
+     * CLOSESTJEWEL
+     */
     /**
      * Create the WMEs at the InputLink of SOAR
      */
@@ -216,12 +228,6 @@ public class SoarBridge
               // Create Visual Sensors
               Identifier visual = CreateIdWME(creatureSensor, "VISUAL");
               List<Thing> thingsList = (List<Thing>) c.getThingsInVision();
-            /**
-             *
-             * @author g.sonoda
-             * Aula 6 - Atividade 1
-             * Adicionar itens na memoria
-             */
               for (Thing t : thingsList) 
                 {
                     Identifier entity = CreateIdWME(visual, "ENTITY");
@@ -373,7 +379,10 @@ public class SoarBridge
         return(parvalue);
     }
     
-    
+    /**
+     * @autor g.sonoda
+     * Incluir DELIVER nos tipos de OutputLink
+     */
     /**
      * Process the OutputLink given by SOAR and return a list of commands to WS3D
      * @return A List of SOAR Commands
@@ -518,6 +527,10 @@ public class SoarBridge
         //resetSimulation();
     }
 
+    /**
+     * @autor g.sonoda
+     * Incluir DELIVER nos tipos de processo
+     */
     private void processCommands(List<Command> commandList) throws CommandExecException
     {
 
