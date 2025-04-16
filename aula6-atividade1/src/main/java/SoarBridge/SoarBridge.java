@@ -31,6 +31,7 @@ import ws3dproxy.CommandUtility;
 import ws3dproxy.model.Creature;
 import ws3dproxy.model.Thing;
 import ws3dproxy.model.Leaflet;
+import ws3dproxy.model.Bag;
 import ws3dproxy.util.Constants;
 
 /**
@@ -55,14 +56,15 @@ public class SoarBridge
     
     Environment env;
     public Creature c;
+    public Bag bag = new Bag(0, 0, 0, 0, new ArrayList<Integer>());
     public String input_link_string = "";
     public String output_link_string = "";
 
     private Map<String, Thing> knownFoods = new HashMap<>();
     private Map<String, Thing> knownJewels = new HashMap<>();
-    private HashMap<String, Integer[]> l1 = new HashMap<>();
-    private HashMap<String, Integer[]> l2 = new HashMap<>();
-    private HashMap<String, Integer[]> l3 = new HashMap<>();
+    private Leaflet l1;
+    private Leaflet l2;
+    private Leaflet l3;
 
 
     /**
@@ -141,8 +143,39 @@ public class SoarBridge
         return itemType;
     }
 
+    /**
+     *
+     * @author g.sonoda
+     * Aula 6 - Atividade 1
+     * Verificar se a bag da possui cristais suficientes para completar aquele leaflet
+     */
+    private boolean bagSatisfiesLeaflet(Bag bag, Leaflet leaflet) {
+        if (bag == null) {
+            System.out.println("BAG NULL");
+            return false;
+        }
+        HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
+        for (Map.Entry<String, Integer[]> entry : leaflet_map.entrySet()) {
+            String type = entry.getKey();
+            int requiredAmount = entry.getValue()[0]; // total necessário
+            int availableInBag = bag.getNumberCrystalPerType(type); // quantidade na bag
+    
+            if (availableInBag < requiredAmount) {
+                return false;
+            }
+        }
+    
+        return true;
+    }
+
+    /**
+     *
+     * @author g.sonoda
+     * Aula 6 - Atividade 1
+     * Verificar se a cor está presente em algum leaflet
+     */
     private boolean isColorInLeaflets(String color) {
-        return l1.containsKey(color) || l2.containsKey(color) || l3.containsKey(color);
+        return l1.getItems().containsKey(color) || l2.getItems().containsKey(color) || l3.getItems().containsKey(color);
     }
     
     /**
@@ -152,9 +185,10 @@ public class SoarBridge
     {
         //SymbolFactory sf = agent.getSymbols();
         Creature c = env.getCreature();
-        l1 = c.getLeaflets().get(0).getItems();
-        l2 = c.getLeaflets().get(1).getItems();
-        l3 = c.getLeaflets().get(2).getItems();
+        
+        l1 = c.getLeaflets().get(0);
+        l2 = c.getLeaflets().get(1);
+        l3 = c.getLeaflets().get(2);        
         inputLink = agent.getInputOutput().getInputLink();
         try
         {
@@ -261,8 +295,12 @@ public class SoarBridge
                 }
                 System.out.println("Closest food: " + closestFood.getName());
                 System.out.println("Closest jewel: " + closestJewel.getName());
-
-            }
+                
+                bag = c.updateBag();
+                Identifier leaflet = CreateIdWME(creature, "LEAFLET");
+                CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
+                CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
+                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);         }
         }
         catch (Exception e)
         {
@@ -409,6 +447,10 @@ public class SoarBridge
                                 commandList.add(command);
                             }
                             break;
+                        case DELIVER:
+                            command = new Command(Command.CommandType.DELIVER);
+                            commandList.add(command);
+                            break;
 
                         default:
                             break;
@@ -496,6 +538,9 @@ public class SoarBridge
                     case EAT:
                         processEatCommand((CommandEat)command.getCommandArgument());
                     break;
+                    case DELIVER:
+                        processDeliverCommand((CommandDeliver)command.getCommandArgument());
+                    break;
 
                     default:System.out.println("Nenhum comando definido ...");
                         // Do nothing
@@ -574,7 +619,27 @@ public class SoarBridge
             logger.severe("Error processing processMoveCommand");
         }
     }
-    
+
+    /**
+     * @autor g.sonoda
+     * Trocar joias por pontos
+     */
+    private void processDeliverCommand(CommandDeliver soarCommandDeliver) throws CommandExecException {
+        if (bagSatisfiesLeaflet(bag, l1)){
+            c.deliverLeaflet(l1.getID().toString());
+            bag = c.updateBag();
+        }
+        if (bagSatisfiesLeaflet(bag, l2)){
+            c.deliverLeaflet(l2.getID().toString());
+            bag = c.updateBag();
+        }
+        if (bagSatisfiesLeaflet(bag, l3)){
+            c.deliverLeaflet(l3.getID().toString());
+            bag = c.updateBag();
+        }
+        
+    }
+
     /**
      * Try Parse a Float Element
      * @param value Float Value
