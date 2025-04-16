@@ -172,6 +172,12 @@ public class SoarBridge
               // Create Visual Sensors
               Identifier visual = CreateIdWME(creatureSensor, "VISUAL");
               List<Thing> thingsList = (List<Thing>) c.getThingsInVision();
+            /**
+             *
+             * @author g.sonoda
+             * Aula 6 - Atividade 1
+             * Adicionar itens na memoria
+             */
               for (Thing t : thingsList) 
                 {
                     Identifier entity = CreateIdWME(visual, "ENTITY");
@@ -183,22 +189,31 @@ public class SoarBridge
                     CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
                     CreateStringWME(entity, "NAME", t.getName());
                     CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));
-                    /**
-                     *
-                     * @author g.sonoda
-                     * Aula 6 - Atividade 1
-                     * Adicionar itens na memoria
-                     */
                     String type = getItemType(t.getCategory());
                     String name = t.getName();                    
                     if ("FOOD".equals(type)) {
                         knownFoods.putIfAbsent(name, t); // armazena só se ainda não conhece
                     } else if ("JEWEL".equals(type)) {
                         knownJewels.putIfAbsent(name, t);
-                    }
-                    System.out.println("Known foods: " + knownFoods.keySet());
-                    System.out.println("Known jewels: " + knownJewels.keySet());                                                  
+                    }                       
                 }
+                Identifier creatureLongMemory = CreateIdWME(creature, "LONGMEMORY");
+                for (Thing food : knownFoods.values()) {
+                    Identifier foodWME = CreateIdWME(creatureLongMemory, "FOOD");                
+                    CreateStringWME(foodWME, "NAME", food.getName());
+                    CreateFloatWME(foodWME, "X", (float) food.getX1());
+                    CreateFloatWME(foodWME, "Y", (float) food.getY1());
+                }
+                for (Thing jewels : knownJewels.values()) {
+                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "JEWELS");                
+                    CreateStringWME(jewelsWME, "NAME", jewels.getName());
+                    CreateFloatWME(jewelsWME, "X", (float) jewels.getX1());
+                    CreateFloatWME(jewelsWME, "Y", (float) jewels.getY1());
+                    CreateStringWME(jewelsWME, "COLOR",Constants.getColorName(jewels.getMaterial().getColor()));
+                }
+                System.out.println("Known foods: " + knownFoods.keySet());
+                System.out.println("Known jewels: " + knownJewels.keySet());   
+
             }
         }
         catch (Exception e)
