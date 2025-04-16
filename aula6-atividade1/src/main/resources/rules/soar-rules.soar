@@ -27,50 +27,48 @@ sp {apply*wander
    (<command> ^VelR 2)
    (<command> ^VelL 0)
 }
-    
-##############################  MOVE FOOD  #####################################
-# This operator will make the agent go straight to the food
 
-# Propose*move*food:
+# @autor g.sonoda
+##############################  MOVE FOOD  #####################################
+# Propor: mover para a comida mais próxima armazenada na memória de longo prazo
 sp {propose*move*food
    (state <s> ^io.input-link <il>)
    (<il> ^CREATURE <creature>)
-   (<creature> ^SENSOR.VISUAL <memory>)
-   (<memory> ^ENTITY <entityInMemory>)
+   (<creature> ^LONGMEMORY <memory>)
+   (<creature> ^PARAMETERS.MINFUEL <minFuel> < 300)
    (<creature> ^POSITION <creaturePosition>)
    (<creaturePosition> ^X <creaturePositionX>)
    (<creaturePosition> ^Y <creaturePositionY>)
-   (<entityInMemory> ^TYPE FOOD)
-   (<entityInMemory> ^X <entityInMemoryPositionX>)
-   (<entityInMemory> ^Y <entityInMemoryPositionY>)
-   (<entityInMemory> ^NAME <entityInMemoryName>) 
-   (<creature> ^PARAMETERS.MINFUEL <minFuel>) 
+   (<memory> ^CLOSESTFOOD <food>)
+   (<food> ^X <foodX>)
+   (<food> ^Y <foodY>)
+   (<food> ^NAME <foodName>)
 -->
    (<s> ^operator <o> +)
    (<o> ^name moveFood)
-   (<o> ^parameter <food>)
-   (<food> ^distance (sqrt (+ (* (- <creaturePositionX> <entityInMemoryPositionX>) (- <creaturePositionX> <entityInMemoryPositionX>)) (* (- <creaturePositionY> <entityInMemoryPositionY>) (- <creaturePositionY> <entityInMemoryPositionY>)))))
-   (<food> ^X <entityInMemoryPositionX>)
-   (<food> ^Y <entityInMemoryPositionY>)
-   (<food> ^NAME <entityInMemoryName>)
+   (<o> ^parameter <food-param>)
+   (<food-param> ^X <foodX>)
+   (<food-param> ^Y <foodY>)
+   (<food-param> ^NAME <foodName>)
+   (<food-param> ^distance 
+      (sqrt (+ 
+        (* (- <creaturePositionX> <foodX>) (- <creaturePositionX> <foodX>))
+        (* (- <creaturePositionY> <foodY>) (- <creaturePositionY> <foodY>))
+      )))
    (<o> ^parameterFuel <minFuel>)}
-   
-# Apply*move*food:
-# If the move operator is selected, then generate an output command to it 
+
+
+# Aplicar: comando de movimento para a comida
 sp {apply*move*food
    (state <s> ^operator <o>
               ^io <io>)
-   (<io> ^input-link <il>)             
+   (<io> ^input-link <il>)
    (<io> ^output-link <ol>)
    (<o> ^name moveFood)
    (<o> ^parameter <food>)
    (<food> ^X <x>)
    (<food> ^Y <y>)
-   (<food> ^NAME <entityInMemoryName>)
-   (<il> ^CREATURE <creature>)
-   (<creature> ^SENSOR.VISUAL <memory>)
-   (<memory> ^ENTITY <entityInMemory>)
-   (<entityInMemory> ^NAME <entityInMemoryName>)
+   (<food> ^NAME <foodName>)
 -->
    (<ol> ^MOVE <command>)
    (<command> ^Vel 1)
@@ -78,8 +76,8 @@ sp {apply*move*food
    (<command> ^VelL 1)
    (<command> ^X <x>)
    (<command> ^Y <y>)
-   #(halt)
 }
+
   
 ###############################  EAT FOOD  #####################################
 # This operator will make the agent eat the food
@@ -121,34 +119,38 @@ sp {apply*eat*food
 }
   
 #############################  MOVE JEWEL  #####################################
-# This operator will make the agent go straight to the jewel
+# Propose: mover para a jóia mais próxima da LONGMEMORY, se o combustível for > 300
 
-# Propose*move*jewel:
 sp {propose*move*jewel
    (state <s> ^io.input-link <il>)
    (<il> ^CREATURE <creature>)
-   (<creature> ^SENSOR.VISUAL <memory>)
-   (<memory> ^ENTITY <entityInMemory>)
+   (<creature> ^LONGMEMORY <memory>)
+   (<creature> ^PARAMETERS.MINFUEL <minFuel> > 300)
    (<creature> ^POSITION <creaturePosition>)
    (<creaturePosition> ^X <creaturePositionX>)
    (<creaturePosition> ^Y <creaturePositionY>)
-   (<entityInMemory> ^TYPE JEWEL)
-   (<entityInMemory> ^X <entityInMemoryPositionX>)
-   (<entityInMemory> ^Y <entityInMemoryPositionY>)
-   (<entityInMemory> ^NAME <entityInMemoryName>)
-   (<entityInMemory> ^COLOR <entityInMemoryColor>)       
+   (<memory> ^CLOSESTJEWEL <jewel>)
+   (<jewel> ^X <jewelX>)
+   (<jewel> ^Y <jewelY>)
+   (<jewel> ^NAME <jewelName>)
+   (<jewel> ^COLOR <jewelColor>)
 -->
    (<s> ^operator <o> +)
    (<o> ^name moveJewel)
-   (<o> ^parameter <jewel>)
-   (<jewel> ^distance (sqrt (+ (* (- <creaturePositionX> <entityInMemoryPositionX>) (- <creaturePositionX> <entityInMemoryPositionX>)) (* (- <creaturePositionY> <entityInMemoryPositionY>) (- <creaturePositionY> <entityInMemoryPositionY>)))))
-   (<jewel> ^X <entityInMemoryPositionX>)
-   (<jewel> ^Y <entityInMemoryPositionY>)
-   (<jewel> ^NAME <entityInMemoryName>)
-   (<jewel> ^COLOR <entityInMemoryColor>)}
-   
-# Apply*move*jewel:
-# If the move operator is selected, then generate an output command to it 
+   (<o> ^parameter <jewel-param>)
+   (<jewel-param> ^X <jewelX>)
+   (<jewel-param> ^Y <jewelY>)
+   (<jewel-param> ^NAME <jewelName>)
+   (<jewel-param> ^COLOR <jewelColor>)
+   (<jewel-param> ^distance 
+      (sqrt (+ 
+        (* (- <creaturePositionX> <jewelX>) (- <creaturePositionX> <jewelX>))
+        (* (- <creaturePositionY> <jewelY>) (- <creaturePositionY> <jewelY>))
+      )))
+}
+
+# Apply: envia comando para ir até a jóia
+
 sp {apply*move*jewel
    (state <s> ^operator <o>
               ^io <io>)
@@ -158,11 +160,7 @@ sp {apply*move*jewel
    (<o> ^parameter <jewel>)
    (<jewel> ^X <x>)
    (<jewel> ^Y <y>)
-   (<jewel> ^NAME <entityInMemoryName>)
-   (<il> ^CREATURE <creature>)
-   (<creature> ^SENSOR.VISUAL <memory>)
-   (<memory> ^ENTITY <entityInMemory>)
-   (<entityInMemory> ^NAME <entityInMemoryName>)
+   (<jewel> ^NAME <jewelName>)
 -->
    (<ol> ^MOVE <command>)
    (<command> ^Vel 1)
@@ -170,7 +168,6 @@ sp {apply*move*jewel
    (<command> ^VelL 1)
    (<command> ^X <x>)
    (<command> ^Y <y>)
-   #(halt)
 }
 
 ##############################  GET JEWEL  #####################################

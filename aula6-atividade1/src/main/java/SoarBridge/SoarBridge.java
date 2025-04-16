@@ -30,6 +30,7 @@ import ws3dproxy.CommandExecException;
 import ws3dproxy.CommandUtility;
 import ws3dproxy.model.Creature;
 import ws3dproxy.model.Thing;
+import ws3dproxy.model.Leaflet;
 import ws3dproxy.util.Constants;
 
 /**
@@ -59,6 +60,9 @@ public class SoarBridge
 
     private Map<String, Thing> knownFoods = new HashMap<>();
     private Map<String, Thing> knownJewels = new HashMap<>();
+    private HashMap<String, Integer[]> l1 = new HashMap<>();
+    private HashMap<String, Integer[]> l2 = new HashMap<>();
+    private HashMap<String, Integer[]> l3 = new HashMap<>();
 
 
     /**
@@ -136,7 +140,10 @@ public class SoarBridge
         }
         return itemType;
     }
-    
+
+    private boolean isColorInLeaflets(String color) {
+        return l1.containsKey(color) || l2.containsKey(color) || l3.containsKey(color);
+    }
     
     /**
      * Create the WMEs at the InputLink of SOAR
@@ -145,6 +152,9 @@ public class SoarBridge
     {
         //SymbolFactory sf = agent.getSymbols();
         Creature c = env.getCreature();
+        l1 = c.getLeaflets().get(0).getItems();
+        l2 = c.getLeaflets().get(1).getItems();
+        l3 = c.getLeaflets().get(2).getItems();
         inputLink = agent.getInputOutput().getInputLink();
         try
         {
@@ -198,21 +208,59 @@ public class SoarBridge
                     }                       
                 }
                 Identifier creatureLongMemory = CreateIdWME(creature, "LONGMEMORY");
+                Identifier closestFoodWME = CreateIdWME(creatureLongMemory, "CLOSESTFOOD");
+                Identifier closestJewelWME = CreateIdWME(creatureLongMemory, "CLOSESTJEWEL");
+
+                double closestFoodDistance = Double.MAX_VALUE;
+                double closestJewelDistance = Double.MAX_VALUE;
+                Thing closestFood = null;
+                Thing closestJewel = null;
+
+
                 for (Thing food : knownFoods.values()) {
-                    Identifier foodWME = CreateIdWME(creatureLongMemory, "FOOD");                
+                    double foodDistance = GetGeometricDistanceToCreature(food.getX1(), food.getY1(), food.getX2(), food.getY2(), c.getPosition().getX(), c.getPosition().getY());
+                    Identifier foodWME = CreateIdWME(creatureLongMemory, "FOOD");
                     CreateStringWME(foodWME, "NAME", food.getName());
                     CreateFloatWME(foodWME, "X", (float) food.getX1());
                     CreateFloatWME(foodWME, "Y", (float) food.getY1());
+                    if (foodDistance < closestFoodDistance) {
+                        closestFoodDistance = foodDistance;
+                        closestFood = food;
+                    }
                 }
-                for (Thing jewels : knownJewels.values()) {
-                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "JEWELS");                
-                    CreateStringWME(jewelsWME, "NAME", jewels.getName());
-                    CreateFloatWME(jewelsWME, "X", (float) jewels.getX1());
-                    CreateFloatWME(jewelsWME, "Y", (float) jewels.getY1());
-                    CreateStringWME(jewelsWME, "COLOR",Constants.getColorName(jewels.getMaterial().getColor()));
+                for (Thing jewel : knownJewels.values()) {
+                    double jewelDistance = GetGeometricDistanceToCreature(jewel.getX1(), jewel.getY1(), jewel.getX2(), jewel.getY2(), c.getPosition().getX(), c.getPosition().getY());
+                    String color = Constants.getColorName(jewel.getMaterial().getColor());
+                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "JEWELS");
+                    CreateStringWME(jewelsWME, "NAME", jewel.getName());
+                    CreateFloatWME(jewelsWME, "X", (float) jewel.getX1());
+                    CreateFloatWME(jewelsWME, "Y", (float) jewel.getY1());
+                    CreateStringWME(jewelsWME, "COLOR", color);
+                    
+                    if (!isColorInLeaflets(color)) {
+                        System.out.println("A Joia não está no Leaflet | color: " + color);
+                        continue;
+                    }
+                
+                    if (jewelDistance < closestJewelDistance ) {
+                        closestJewelDistance = jewelDistance;
+                        closestJewel = jewel;
+                    }
                 }
-                System.out.println("Known foods: " + knownFoods.keySet());
-                System.out.println("Known jewels: " + knownJewels.keySet());   
+                if (closestFood != null) {
+                    CreateStringWME(closestFoodWME, "NAME", closestFood.getName());
+                    CreateFloatWME(closestFoodWME, "X", (float) closestFood.getX1());
+                    CreateFloatWME(closestFoodWME, "Y", (float) closestFood.getY1());
+                }
+                if (closestJewel != null) {
+
+                    CreateStringWME(closestJewelWME, "NAME", closestJewel.getName());
+                    CreateFloatWME(closestJewelWME, "X", (float) closestJewel.getX1());
+                    CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
+                    CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
+                }
+                System.out.println("Closest food: " + closestFood.getName());
+                System.out.println("Closest jewel: " + closestJewel.getName());
 
             }
         }
