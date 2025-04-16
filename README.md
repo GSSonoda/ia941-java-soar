@@ -16,11 +16,23 @@ docker compose up
 
 Este comando vai construir e iniciar o WS3D Coppelia
 
-### Passo 2: Executar o Aplicativo de Controle Manual
+### Passo 2: Executar o Atividade 1
+
+```bash
+cd aula6-atividade1/
+```
 
 ```bash
 ./gradlew run
 ```
 
-Este comando vai compilar e executar o aplicativo em Java que faz o controle manual do sistema.
+### Passo 3: Executar o Atividade 2
+
+```bash
+cd aula6-atividade2/
+```
+
+```bash
+./gradlew run
+```
 
