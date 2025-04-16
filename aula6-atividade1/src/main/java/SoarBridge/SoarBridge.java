@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.HashMap;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.Phase;
 import org.jsoar.kernel.RunType;
@@ -54,6 +56,10 @@ public class SoarBridge
     public Creature c;
     public String input_link_string = "";
     public String output_link_string = "";
+
+    private Map<String, Thing> knownFoods = new HashMap<>();
+    private Map<String, Thing> knownJewels = new HashMap<>();
+
 
     /**
      * Constructor class
@@ -168,15 +174,30 @@ public class SoarBridge
               List<Thing> thingsList = (List<Thing>) c.getThingsInVision();
               for (Thing t : thingsList) 
                 {
-                 Identifier entity = CreateIdWME(visual, "ENTITY");
-                 CreateFloatWME(entity, "DISTANCE", GetGeometricDistanceToCreature(t.getX1(),t.getY1(),t.getX2(),t.getY2(),c.getPosition().getX(),c.getPosition().getY()));                                                    
-                 CreateFloatWME(entity, "X", t.getX1());
-                 CreateFloatWME(entity, "Y", t.getY1());
-                 CreateFloatWME(entity, "X2", t.getX2());
-                 CreateFloatWME(entity, "Y2", t.getY2());
-                 CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
-                 CreateStringWME(entity, "NAME", t.getName());
-                 CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));                                                    
+                    Identifier entity = CreateIdWME(visual, "ENTITY");
+                    CreateFloatWME(entity, "DISTANCE", GetGeometricDistanceToCreature(t.getX1(),t.getY1(),t.getX2(),t.getY2(),c.getPosition().getX(),c.getPosition().getY()));                                                    
+                    CreateFloatWME(entity, "X", t.getX1());
+                    CreateFloatWME(entity, "Y", t.getY1());
+                    CreateFloatWME(entity, "X2", t.getX2());
+                    CreateFloatWME(entity, "Y2", t.getY2());
+                    CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
+                    CreateStringWME(entity, "NAME", t.getName());
+                    CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));
+                    /**
+                     *
+                     * @author g.sonoda
+                     * Aula 6 - Atividade 1
+                     * Adicionar itens na memoria
+                     */
+                    String type = getItemType(t.getCategory());
+                    String name = t.getName();                    
+                    if ("FOOD".equals(type)) {
+                        knownFoods.putIfAbsent(name, t); // armazena só se ainda não conhece
+                    } else if ("JEWEL".equals(type)) {
+                        knownJewels.putIfAbsent(name, t);
+                    }
+                    System.out.println("Known foods: " + knownFoods.keySet());
+                    System.out.println("Known jewels: " + knownJewels.keySet());                                                  
                 }
             }
         }
@@ -454,6 +475,13 @@ public class SoarBridge
         if (soarCommandGet != null)
         {
             c.putInSack(soarCommandGet.getThingName());
+            /**
+             *
+             * @author g.sonoda
+             * Aula 6 - Atividade 1
+             * Remover Joia da memoria
+             */
+            knownJewels.remove(soarCommandGet.getThingName());
         }
         else
         {
@@ -470,6 +498,13 @@ public class SoarBridge
         if (soarCommandEat != null)
         {
             c.eatIt(soarCommandEat.getThingName());
+            /**
+             *
+             * @author g.sonoda
+             * Aula 6 - Atividade 1
+             * Remover Joia da memoria
+             */
+            knownFoods.remove(soarCommandEat.getThingName());
         }
         else
         {
