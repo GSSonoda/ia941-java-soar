@@ -35,7 +35,7 @@ sp {propose*move*food
    (state <s> ^io.input-link <il>)
    (<il> ^CREATURE <creature>)
    (<creature> ^LONGMEMORY <memory>)
-   (<creature> ^PARAMETERS.MINFUEL <minFuel> < 300)
+   (<creature> ^SENSOR.FUEL <fuel> < 300)
    (<creature> ^POSITION <creaturePosition>)
    (<creaturePosition> ^X <creaturePositionX>)
    (<creaturePosition> ^Y <creaturePositionY>)
@@ -55,7 +55,7 @@ sp {propose*move*food
         (* (- <creaturePositionX> <foodX>) (- <creaturePositionX> <foodX>))
         (* (- <creaturePositionY> <foodY>) (- <creaturePositionY> <foodY>))
       )))
-   (<o> ^parameterFuel <minFuel>)}
+   (<o> ^parameterFuel <fuel>)}
 
 
 # Aplicar: comando de movimento para a comida
@@ -125,7 +125,7 @@ sp {propose*move*jewel
    (state <s> ^io.input-link <il>)
    (<il> ^CREATURE <creature>)
    (<creature> ^LONGMEMORY <memory>)
-   (<creature> ^PARAMETERS.MINFUEL <minFuel> > 300)
+   (<creature> ^SENSOR.FUEL <fuel> >= 300)
    (<creature> ^POSITION <creaturePosition>)
    (<creaturePosition> ^X <creaturePositionX>)
    (<creaturePosition> ^Y <creaturePositionY>)
