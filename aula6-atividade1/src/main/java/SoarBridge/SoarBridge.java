@@ -214,7 +214,7 @@ public class SoarBridge
               // Set Creature Parameters
               Calendar lCDateTime = Calendar.getInstance();
               creatureParameters = CreateIdWME(creature, "PARAMETERS");
-              CreateFloatWME(creatureParameters, "MINFUEL", 400);
+              CreateFloatWME(creatureParameters, "MINFUEL", 300);
               CreateFloatWME(creatureParameters, "TIMESTAMP", lCDateTime.getTimeInMillis());
               // Setting creature Position
               creaturePosition = CreateIdWME(creature, "POSITION");
