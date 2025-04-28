@@ -23,7 +23,7 @@ public class MindView extends javax.swing.JFrame implements Observer {
     ImageIcon pause_icon = new ImageIcon(getClass().getResource("/images/pause-icon.png")); 
     ImageIcon play_icon = new ImageIcon(getClass().getResource("/images/play-icon.png"));
     WorkingMemoryViewer wmi;
-
+    
     /**
      * Creates new form MindView
      */
@@ -370,6 +370,10 @@ public class MindView extends javax.swing.JFrame implements Observer {
     public void set_output_link_text(String text) {
         output_link.setText(text);
     }
+    
+    public boolean isSoarBridgeActive() {
+        return (sb.isSoarBrigdeActive);
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTextField currentPhase;
@@ -395,4 +399,5 @@ public class MindView extends javax.swing.JFrame implements Observer {
     private javax.swing.JButton startstop;
     private javax.swing.JButton step;
     // End of variables declaration//GEN-END:variables
+
 }

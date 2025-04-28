@@ -6,14 +6,18 @@
 package SoarBridge;
 
 import Simulation.Environment;
+import static SoarBridge.Command.CommandType.IMPASSE_INFO;
+import static SoarBridge.Command.CommandType.INPUT_LINK;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Map;
-import java.util.HashMap;
 import org.jsoar.kernel.Agent;
 import org.jsoar.kernel.Phase;
 import org.jsoar.kernel.RunType;
@@ -30,8 +34,6 @@ import ws3dproxy.CommandExecException;
 import ws3dproxy.CommandUtility;
 import ws3dproxy.model.Creature;
 import ws3dproxy.model.Thing;
-import ws3dproxy.model.Leaflet;
-import ws3dproxy.model.Bag;
 import ws3dproxy.util.Constants;
 
 /**
@@ -58,18 +60,8 @@ public class SoarBridge
     public Creature c;
     public String input_link_string = "";
     public String output_link_string = "";
-
-    /**
-     * @autor g.sonoda
-     * Inicialização de variaveis uteis para a aula 6 - atividade 1
-     */
-    private Bag bag = new Bag(0, 0, 0, 0, new ArrayList<Integer>());
-    private Map<String, Thing> knownFoods = new HashMap<>();
-    private Map<String, Thing> knownJewels = new HashMap<>();
-    private Leaflet l1;
-    private Leaflet l2;
-    private Leaflet l3;
-
+    
+    public boolean isSoarBrigdeActive = true;
 
     /**
      * Constructor class
@@ -146,50 +138,8 @@ public class SoarBridge
         }
         return itemType;
     }
-
-    /**
-     *
-     * @author g.sonoda
-     * Aula 6 - Atividade 1
-     * Verificar se a bag da possui cristais suficientes para completar aquele leaflet
-     */
-    private boolean bagSatisfiesLeaflet(Bag bag, Leaflet leaflet) {
-        if (bag == null) {
-            System.out.println("BAG NULL");
-            return false;
-        }
-        HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
-        for (Map.Entry<String, Integer[]> entry : leaflet_map.entrySet()) {
-            String type = entry.getKey();
-            int requiredAmount = entry.getValue()[0]; // total necessário
-            int availableInBag = bag.getNumberCrystalPerType(type); // quantidade na bag
     
-            if (availableInBag < requiredAmount) {
-                return false;
-            }
-        }
     
-        return true;
-    }
-
-    /**
-     *
-     * @author g.sonoda
-     * Aula 6 - Atividade 1
-     * Verificar se a cor está presente em algum leaflet
-     */
-    private boolean isColorInLeaflets(String color) {
-        return l1.getItems().containsKey(color) || l2.getItems().containsKey(color) || l3.getItems().containsKey(color);
-    }
-
-    /**
-     * @autor g.sonoda
-     * Incluir novos InputLinks como
-     * LONGMEMORY
-     * LEAFLEAT
-     * CLOSESTFOOD
-     * CLOSESTJEWEL
-     */
     /**
      * Create the WMEs at the InputLink of SOAR
      */
@@ -197,10 +147,6 @@ public class SoarBridge
     {
         //SymbolFactory sf = agent.getSymbols();
         Creature c = env.getCreature();
-        
-        l1 = c.getLeaflets().get(0);
-        l2 = c.getLeaflets().get(1);
-        l3 = c.getLeaflets().get(2);        
         inputLink = agent.getInputOutput().getInputLink();
         try
         {
@@ -214,7 +160,7 @@ public class SoarBridge
               // Set Creature Parameters
               Calendar lCDateTime = Calendar.getInstance();
               creatureParameters = CreateIdWME(creature, "PARAMETERS");
-              CreateFloatWME(creatureParameters, "MINFUEL", 300);
+              CreateFloatWME(creatureParameters, "MINFUEL", 400);
               CreateFloatWME(creatureParameters, "TIMESTAMP", lCDateTime.getTimeInMillis());
               // Setting creature Position
               creaturePosition = CreateIdWME(creature, "POSITION");
@@ -230,83 +176,17 @@ public class SoarBridge
               List<Thing> thingsList = (List<Thing>) c.getThingsInVision();
               for (Thing t : thingsList) 
                 {
-                    Identifier entity = CreateIdWME(visual, "ENTITY");
-                    CreateFloatWME(entity, "DISTANCE", GetGeometricDistanceToCreature(t.getX1(),t.getY1(),t.getX2(),t.getY2(),c.getPosition().getX(),c.getPosition().getY()));                                                    
-                    CreateFloatWME(entity, "X", t.getX1());
-                    CreateFloatWME(entity, "Y", t.getY1());
-                    CreateFloatWME(entity, "X2", t.getX2());
-                    CreateFloatWME(entity, "Y2", t.getY2());
-                    CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
-                    CreateStringWME(entity, "NAME", t.getName());
-                    CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));
-                    String type = getItemType(t.getCategory());
-                    String name = t.getName();                    
-                    if ("FOOD".equals(type)) {
-                        knownFoods.putIfAbsent(name, t); // armazena só se ainda não conhece
-                    } else if ("JEWEL".equals(type)) {
-                        knownJewels.putIfAbsent(name, t);
-                    }                       
+                 Identifier entity = CreateIdWME(visual, "ENTITY");
+                 CreateFloatWME(entity, "DISTANCE", GetGeometricDistanceToCreature(t.getX1(),t.getY1(),t.getX2(),t.getY2(),c.getPosition().getX(),c.getPosition().getY()));                                                    
+                 CreateFloatWME(entity, "X", t.getX1());
+                 CreateFloatWME(entity, "Y", t.getY1());
+                 CreateFloatWME(entity, "X2", t.getX2());
+                 CreateFloatWME(entity, "Y2", t.getY2());
+                 CreateStringWME(entity, "TYPE", getItemType(t.getCategory()));
+                 CreateStringWME(entity, "NAME", t.getName());
+                 CreateStringWME(entity, "COLOR",Constants.getColorName(t.getMaterial().getColor()));                                                    
                 }
-                Identifier creatureLongMemory = CreateIdWME(creature, "LONGMEMORY");
-                Identifier closestFoodWME = CreateIdWME(creatureLongMemory, "CLOSESTFOOD");
-                Identifier closestJewelWME = CreateIdWME(creatureLongMemory, "CLOSESTJEWEL");
-
-                double closestFoodDistance = Double.MAX_VALUE;
-                double closestJewelDistance = Double.MAX_VALUE;
-                Thing closestFood = null;
-                Thing closestJewel = null;
-
-
-                for (Thing food : knownFoods.values()) {
-                    double foodDistance = GetGeometricDistanceToCreature(food.getX1(), food.getY1(), food.getX2(), food.getY2(), c.getPosition().getX(), c.getPosition().getY());
-                    Identifier foodWME = CreateIdWME(creatureLongMemory, "FOOD");
-                    CreateStringWME(foodWME, "NAME", food.getName());
-                    CreateFloatWME(foodWME, "X", (float) food.getX1());
-                    CreateFloatWME(foodWME, "Y", (float) food.getY1());
-                    if (foodDistance < closestFoodDistance) {
-                        closestFoodDistance = foodDistance;
-                        closestFood = food;
-                    }
-                }
-                for (Thing jewel : knownJewels.values()) {
-                    double jewelDistance = GetGeometricDistanceToCreature(jewel.getX1(), jewel.getY1(), jewel.getX2(), jewel.getY2(), c.getPosition().getX(), c.getPosition().getY());
-                    String color = Constants.getColorName(jewel.getMaterial().getColor());
-                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "JEWELS");
-                    CreateStringWME(jewelsWME, "NAME", jewel.getName());
-                    CreateFloatWME(jewelsWME, "X", (float) jewel.getX1());
-                    CreateFloatWME(jewelsWME, "Y", (float) jewel.getY1());
-                    CreateStringWME(jewelsWME, "COLOR", color);
-                    
-                    if (!isColorInLeaflets(color)) {
-                        System.out.println("A Joia não está no Leaflet | color: " + color);
-                        continue;
-                    }
-                
-                    if (jewelDistance < closestJewelDistance ) {
-                        closestJewelDistance = jewelDistance;
-                        closestJewel = jewel;
-                    }
-                }
-                if (closestFood != null) {
-                    CreateStringWME(closestFoodWME, "NAME", closestFood.getName());
-                    CreateFloatWME(closestFoodWME, "X", (float) closestFood.getX1());
-                    CreateFloatWME(closestFoodWME, "Y", (float) closestFood.getY1());
-                }
-                if (closestJewel != null) {
-
-                    CreateStringWME(closestJewelWME, "NAME", closestJewel.getName());
-                    CreateFloatWME(closestJewelWME, "X", (float) closestJewel.getX1());
-                    CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
-                    CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
-                }
-                System.out.println("Closest food: " + closestFood.getName());
-                System.out.println("Closest jewel: " + closestJewel.getName());
-                
-                bag = c.updateBag();
-                Identifier leaflet = CreateIdWME(creature, "LEAFLET");
-                CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);         }
+            }
         }
         catch (Exception e)
         {
@@ -379,10 +259,38 @@ public class SoarBridge
         return(parvalue);
     }
     
-    /**
-     * @autor g.sonoda
-     * Incluir DELIVER nos tipos de OutputLink
-     */
+    public static void exportWMEGraph(Identifier id, StringBuilder builder, int indentLevel) {
+        String indent = "   ".repeat(indentLevel);
+        Iterator<Wme> wmes = id.getWmes();
+
+        while (wmes.hasNext()) {
+            Wme wme = wmes.next();
+            Symbol attr = wme.getAttribute();
+            Symbol value = wme.getValue();
+
+            if (value instanceof Identifier) {
+                builder.append(indent).append("* ").append(attr.toString()).append("\n");
+                exportWMEGraph((Identifier) value, builder, indentLevel + 1);
+            } else {
+                builder.append(indent).append("- ").append(attr.toString())
+                       .append(": ").append(value.toString()).append("\n");
+            }
+        }
+    }
+    
+    private Symbol getIdentifierForAttribute(Identifier outputLink, Command.CommandType attribute) {
+        Symbol value = null;
+        Iterator<Wme> wmesImpasse = outputLink.getWmes();
+        if(wmesImpasse.hasNext()) {
+            Wme wme = wmesImpasse.next();
+            if(!wme.getAttribute().toString().equals(attribute.toString())){
+                 wme = wmesImpasse.next();
+            }
+            value = wme.getValue();
+        }
+        return value;
+    }
+    
     /**
      * Process the OutputLink given by SOAR and return a list of commands to WS3D
      * @return A List of SOAR Commands
@@ -396,15 +304,34 @@ public class SoarBridge
             if (agent != null)
             {
                 List<Wme> Commands = Wmes.matcher(agent).filter(agent.getInputOutput().getOutputLink());
-
                 for (Wme com : Commands)
                 {
                     String name  = com.getAttribute().asString().getValue();
                     Command.CommandType commandType = Enum.valueOf(Command.CommandType.class, name);
                     Command command = null;
-
                     switch(commandType)
                     {
+                        case IMPASSE_INFO:
+                            command = new Command(Command.CommandType.IMPASSE_INFO);
+                            CommandImpasseInfo commandImpasseInfo = (CommandImpasseInfo)command.getCommandArgument();
+                            if (commandImpasseInfo != null)
+                            {
+                                Symbol value = getIdentifierForAttribute(agent.getInputOutput().getOutputLink(), IMPASSE_INFO);
+                                commandImpasseInfo.setImpasseInfoIdentifier(value);
+                                commandList.add(command);
+                            }
+                            break;
+                        case INPUT_LINK:
+                            command = new Command(Command.CommandType.INPUT_LINK);
+                            CommandInputLink commandInputLink = (CommandInputLink)command.getCommandArgument();
+                            if (commandInputLink != null)
+                            {
+                                Symbol value = getIdentifierForAttribute(agent.getInputOutput().getOutputLink(), INPUT_LINK);
+                                commandInputLink.setInputLinkIdentifier(value);
+                                commandList.add(command);
+                            }
+
+                            break;
                         case MOVE:
                             Float rightVelocity = null;
                             Float leftVelocity = null;
@@ -455,10 +382,6 @@ public class SoarBridge
                                 if (thingNameToEat != null) commandEat.setThingName(thingNameToEat);
                                 commandList.add(command);
                             }
-                            break;
-                        case DELIVER:
-                            command = new Command(Command.CommandType.DELIVER);
-                            commandList.add(command);
                             break;
 
                         default:
@@ -527,10 +450,6 @@ public class SoarBridge
         //resetSimulation();
     }
 
-    /**
-     * @autor g.sonoda
-     * Incluir DELIVER nos tipos de processo
-     */
     private void processCommands(List<Command> commandList) throws CommandExecException
     {
 
@@ -551,8 +470,13 @@ public class SoarBridge
                     case EAT:
                         processEatCommand((CommandEat)command.getCommandArgument());
                     break;
-                    case DELIVER:
-                        processDeliverCommand((CommandDeliver)command.getCommandArgument());
+                    
+                    case INPUT_LINK:
+                        processInputLinkCommand((CommandInputLink)command.getCommandArgument());
+                    break;
+                    
+                    case IMPASSE_INFO:
+                        processImpasseInfoCommand((CommandImpasseInfo)command.getCommandArgument());
                     break;
 
                     default:System.out.println("Nenhum comando definido ...");
@@ -596,13 +520,6 @@ public class SoarBridge
         if (soarCommandGet != null)
         {
             c.putInSack(soarCommandGet.getThingName());
-            /**
-             *
-             * @author g.sonoda
-             * Aula 6 - Atividade 1
-             * Remover Joia da memoria
-             */
-            knownJewels.remove(soarCommandGet.getThingName());
         }
         else
         {
@@ -619,40 +536,57 @@ public class SoarBridge
         if (soarCommandEat != null)
         {
             c.eatIt(soarCommandEat.getThingName());
-            /**
-             *
-             * @author g.sonoda
-             * Aula 6 - Atividade 1
-             * Remover Joia da memoria
-             */
-            knownFoods.remove(soarCommandEat.getThingName());
         }
         else
         {
-            logger.severe("Error processing processMoveCommand");
+            logger.severe("Error processing processEatCommand");
         }
     }
-
+    
     /**
-     * @autor g.sonoda
-     * Trocar joias por pontos
+     * Show impasse info
+     * @param soarCommandEat Soar Impasse Info Command Structure
      */
-    private void processDeliverCommand(CommandDeliver soarCommandDeliver) throws CommandExecException {
-        if (bagSatisfiesLeaflet(bag, l1)){
-            c.deliverLeaflet(l1.getID().toString());
-            bag = c.updateBag();
+    private void processImpasseInfoCommand(CommandImpasseInfo soarCommandImpasseInfo) throws CommandExecException
+    {
+        if (soarCommandImpasseInfo != null)
+        {
+            StringBuilder impasseInfo = new StringBuilder();
+            exportWMEGraph((Identifier) soarCommandImpasseInfo.getImpasseInfoIdentifier(), impasseInfo, 0);
+            System.out.println("Impasse happened. This are the impasse infos:\n" + impasseInfo.toString());
+                            
         }
-        if (bagSatisfiesLeaflet(bag, l2)){
-            c.deliverLeaflet(l2.getID().toString());
-            bag = c.updateBag();
+        else
+        {
+            logger.severe("Error processing processImpasseInfo");
         }
-        if (bagSatisfiesLeaflet(bag, l3)){
-            c.deliverLeaflet(l3.getID().toString());
-            bag = c.updateBag();
-        }
-        
     }
-
+    
+    /**
+     * Show save input link when impasse
+     * @param soarCommandInputLink Soar Imput Link Command Structure
+     */
+    private void processInputLinkCommand(CommandInputLink soarCommandInputLink) throws CommandExecException
+    {
+        if (soarCommandInputLink != null)
+        {          
+            StringBuilder inputLink = new StringBuilder();
+            inputLink.append("* InputLink\n");
+            exportWMEGraph((Identifier) soarCommandInputLink.getInputLinkIdentifier(), inputLink, 1);
+            try {
+                Files.write(Paths.get("inputlink.txt"), inputLink.toString().getBytes());
+            } catch (IOException ex) {
+                Logger.getLogger(SoarBridge.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            isSoarBrigdeActive = false;
+            System.out.println("Input link is in file 'inputlink.txt'");
+        }
+        else
+        {
+            logger.severe("Error processing processInputLink");
+        }
+    }
+    
     /**
      * Try Parse a Float Element
      * @param value Float Value

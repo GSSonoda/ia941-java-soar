@@ -16,7 +16,8 @@ public class Command
         MOVE,
         GET,
         EAT,
-        DELIVER
+        INPUT_LINK,
+        IMPASSE_INFO
     }
 
     private CommandType commandType;
@@ -45,8 +46,13 @@ public class Command
             case EAT:
                 commandArgument = new CommandEat();
                 break;
-            case DELIVER:
-                commandArgument = new CommandDeliver();
+                
+            case INPUT_LINK:
+                commandArgument = new CommandInputLink();
+                break;
+            
+            case IMPASSE_INFO:
+                commandArgument = new CommandImpasseInfo();
                 break;
 
             default:

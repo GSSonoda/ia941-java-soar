@@ -44,9 +44,12 @@ public class Main
             while(true)
             {
                 if (mv.getDebugState() == 0) {
-                   soarBridge.step();
-                   mv.set_input_link_text(soarBridge.input_link_string);
-                   mv.set_output_link_text(soarBridge.output_link_string);
+                    if(mv.isSoarBridgeActive()){
+                        soarBridge.step();
+                        mv.set_input_link_text(soarBridge.input_link_string);
+                        mv.set_output_link_text(soarBridge.output_link_string);
+                    }
+                   
                 }
                 else e.c.updateState();
                 Thread.sleep(100);                   
