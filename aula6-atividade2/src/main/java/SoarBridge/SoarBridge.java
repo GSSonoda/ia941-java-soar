@@ -151,11 +151,44 @@ public class SoarBridge
      *
      * @author g.sonoda
      * Aula 6 - Atividade 1
+     * Verificar se as joias conhecidas são suficientes para completar o leaflet
+     */
+    private boolean knownJewelsSatisfyLeaflet(Map<String, Thing> jewels, Leaflet leaflet) {
+        if (jewels == null || jewels.isEmpty()) {
+            return false;
+        }
+
+        // Contar quantas joias de cada cor temos em knownJewels
+        Map<String, Integer> jewelColorCounts = new HashMap<>();
+        for (Thing jewel : jewels.values()) {
+            String color = Constants.getColorName(jewel.getMaterial().getColor());
+            jewelColorCounts.put(color, jewelColorCounts.getOrDefault(color, 0) + 1);
+        }
+
+        // Agora verificar se conseguimos satisfazer o leaflet
+        HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
+        for (Map.Entry<String, Integer[]> entry : leaflet_map.entrySet()) {
+            String type = entry.getKey();
+            int requiredAmount = entry.getValue()[0]; // total necessário
+            int availableJewels = jewelColorCounts.getOrDefault(type, 0); // quantidade disponível nas knownJewels
+
+            if (availableJewels < requiredAmount) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     *
+     * @author g.sonoda
+     * Aula 6 - Atividade 1
      * Verificar se a bag da possui cristais suficientes para completar aquele leaflet
      */
     private boolean bagSatisfiesLeaflet(Bag bag, Leaflet leaflet) {
         if (bag == null) {
-            System.out.println("BAG NULL");
+            // System.out.println("BAG NULL");
             return false;
         }
         HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
@@ -278,7 +311,7 @@ public class SoarBridge
                     CreateStringWME(jewelsWME, "COLOR", color);
                     
                     if (!isColorInLeaflets(color)) {
-                        System.out.println("A Joia não está no Leaflet | color: " + color);
+                        // System.out.println("A Joia não está no Leaflet | color: " + color);
                         continue;
                     }
                 
@@ -299,11 +332,21 @@ public class SoarBridge
                     CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
                     CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
                 }
-                System.out.println("Closest food: " + closestFood.getName());
-                System.out.println("Closest jewel: " + closestJewel.getName());
+                // System.out.println("Closest food: " + closestFood.getName());
+                // System.out.println("Closest jewel: " + closestJewel.getName());
                 
                 bag = c.updateBag();
                 Identifier leaflet = CreateIdWME(creature, "LEAFLET");
+                Identifier leaflet_l1 = CreateIdWME(leaflet, "L1");
+                Identifier leaflet_l2 = CreateIdWME(leaflet, "L2");
+                Identifier leaflet_l3 = CreateIdWME(leaflet, "L3");
+                CreateFloatWME(leaflet_l1, "PAYMENT", l1.getPayment());
+                CreateFloatWME(leaflet_l2, "PAYMENT", l2.getPayment());
+                CreateFloatWME(leaflet_l3, "PAYMENT", l3.getPayment());
+                CreateFloatWME(leaflet_l1, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l1) ? 1.0f : 0.0f);
+                CreateFloatWME(leaflet_l2, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l2)? 1.0f : 0.0f);
+                CreateFloatWME(leaflet_l3, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l3)? 1.0f : 0.0f);
+
                 CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
                 CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
                 CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);         }
@@ -490,7 +533,7 @@ public class SoarBridge
         //printInputWMEs();
         runSOAR();
         output_link_string = stringOutputLink();
-        //printOutputWMEs();
+        printOutputWMEs();
         List<Command> commandList = processOutputLink();
         processCommands(commandList);
         //resetSimulation();
