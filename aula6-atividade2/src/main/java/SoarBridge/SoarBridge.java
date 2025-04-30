@@ -174,10 +174,7 @@ public class SoarBridge
             if (availableJewels < requiredAmount) {
                 return false;
             }
-            
-            System.out.println("leaflet color: " + type + "required: " + requiredAmount);
         }
-        System.out.println("jewelColorCounts: " + jewelColorCounts);
         return true;
     }
 
