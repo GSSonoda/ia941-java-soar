@@ -165,7 +165,6 @@ public class SoarBridge
             jewelColorCounts.put(color, jewelColorCounts.getOrDefault(color, 0) + 1);
         }
 
-        // Agora verificar se conseguimos satisfazer o leaflet
         HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
         for (Map.Entry<String, Integer[]> entry : leaflet_map.entrySet()) {
             String type = entry.getKey();
@@ -175,8 +174,10 @@ public class SoarBridge
             if (availableJewels < requiredAmount) {
                 return false;
             }
+            
+            System.out.println("leaflet color: " + type + "required: " + requiredAmount);
         }
-
+        System.out.println("jewelColorCounts: " + jewelColorCounts);
         return true;
     }
 
@@ -188,7 +189,6 @@ public class SoarBridge
      */
     private boolean bagSatisfiesLeaflet(Bag bag, Leaflet leaflet) {
         if (bag == null) {
-            // System.out.println("BAG NULL");
             return false;
         }
         HashMap<String, Integer[]> leaflet_map = leaflet.getItems();
@@ -311,7 +311,6 @@ public class SoarBridge
                     CreateStringWME(jewelsWME, "COLOR", color);
                     
                     if (!isColorInLeaflets(color)) {
-                        // System.out.println("A Joia não está no Leaflet | color: " + color);
                         continue;
                     }
                 
@@ -331,11 +330,8 @@ public class SoarBridge
                     CreateFloatWME(closestJewelWME, "X", (float) closestJewel.getX1());
                     CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
                     CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
-                }
-                // System.out.println("Closest food: " + closestFood.getName());
-                // System.out.println("Closest jewel: " + closestJewel.getName());
-                
-                bag = c.updateBag();
+                }                
+                // bag = c.updateBag();
                 Identifier leaflet = CreateIdWME(creature, "LEAFLET");
                 Identifier leaflet_l1 = CreateIdWME(leaflet, "L1");
                 Identifier leaflet_l2 = CreateIdWME(leaflet, "L2");
@@ -344,8 +340,8 @@ public class SoarBridge
                 CreateFloatWME(leaflet_l2, "PAYMENT", l2.getPayment());
                 CreateFloatWME(leaflet_l3, "PAYMENT", l3.getPayment());
                 CreateFloatWME(leaflet_l1, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l1) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet_l2, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l2)? 1.0f : 0.0f);
-                CreateFloatWME(leaflet_l3, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l3)? 1.0f : 0.0f);
+                CreateFloatWME(leaflet_l2, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l2) ? 1.0f : 0.0f);
+                CreateFloatWME(leaflet_l3, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l3) ? 1.0f : 0.0f);
 
                 CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
                 CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
@@ -528,12 +524,13 @@ public class SoarBridge
         if (phase != -1) finish_msteps();
         resetSimulation();
         c.updateState();
+
         prepareInputLink();
         input_link_string = stringInputLink();
         //printInputWMEs();
         runSOAR();
         output_link_string = stringOutputLink();
-        printOutputWMEs();
+        // printOutputWMEs();
         List<Command> commandList = processOutputLink();
         processCommands(commandList);
         //resetSimulation();
@@ -598,7 +595,8 @@ public class SoarBridge
                         processDeliverCommand((CommandDeliver)command.getCommandArgument());
                     break;
 
-                    default:System.out.println("Nenhum comando definido ...");
+                    default:
+                        System.out.println("Nenhum comando definido ...");
                         // Do nothing
                     break;
                 }
