@@ -8,10 +8,10 @@ package SoarBridge;
  *
  * @author victor
  */
-public class CommandDeliver {
-        private String thingName = null;
+public class CommandTie {
+    private String thingName = null;
 
-    public CommandDeliver()
+    public CommandTie()
     {
 
     }

@@ -76,11 +76,11 @@ public class WorkingMemoryViewer extends javax.swing.JFrame {
         }
         //</editor-fold>
         try {
-           NativeUtils.loadFileFromJar("/soar-rules.soar");
+           NativeUtils.loadFileFromJar("/soar-rules-atv2.soar");
         } catch(Exception e) {
             e.printStackTrace();
         }   
-        String soarRulesPath = "soar-rules.soar";
+        String soarRulesPath = "soar-rules-atv2.soar";
         Environment e = new Environment(Boolean.FALSE);
         SoarBridge soarBridge = new SoarBridge(e,soarRulesPath,true);
         WorkingMemoryViewer ov = new WorkingMemoryViewer("Teste",soarBridge);

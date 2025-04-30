@@ -33,7 +33,9 @@ public class Environment
         c = proxy.createCreature(400,300,0,1);
         c.start();
         w.grow(1);
-
+       
+        
+        
         if (prepareEnviromentAndStartGame)
         {
             // Create Simulation Enviroment - Bricks
@@ -50,6 +52,10 @@ public class Environment
     
     public Creature getCreature() {
         return(c);
+    }
+    
+    public WS3DProxy getProxy() {
+        return(proxy);
     }
 
     
