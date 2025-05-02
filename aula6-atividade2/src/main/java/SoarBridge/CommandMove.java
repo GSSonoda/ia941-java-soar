@@ -22,15 +22,6 @@ public class CommandMove
     {
 
     }
-    
-    public CommandMove(Double xVal, Double yVal, Double vel, Double velL, Double velR)
-    {
-     x = xVal.floatValue();
-     y = yVal.floatValue();
-     linearVelocity = vel.floatValue();
-     leftVelocity = velL.floatValue();
-     rightVelocity = velR.floatValue();
-    }
 
     /**
      * @return the rightVelocity

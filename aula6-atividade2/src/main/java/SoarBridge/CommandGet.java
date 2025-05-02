@@ -18,11 +18,6 @@ public class CommandGet
     {
 
     }
-    
-    public CommandGet(String nameThing)
-    {
-        thingName = nameThing;
-    }
 
     /**
      * @return the thingName
