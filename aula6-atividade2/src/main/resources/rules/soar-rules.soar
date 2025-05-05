@@ -9,7 +9,7 @@ epmem --set learning off
 # This operator will make the agent to walk ahead at the enviroment
 # Propose*wander:
 # sp {propose*wander
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 # -->
 #    (<s> ^operator <o> +)
 #    (<o> ^name wander)}
@@ -32,7 +32,7 @@ epmem --set learning off
 ##############################  MOVE FOOD  #####################################
 # Propor: mover para a comida mais próxima armazenada na memória de longo prazo
 # sp {propose*move*food
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^LONGMEMORY <memory>)
 #    (<creature> ^PARAMETERS.MINFUEL <minFuel>)
@@ -84,7 +84,7 @@ sp {apply*move*food
 
 # Propose*eat*food:
 # sp {propose*eat*food
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^SENSOR.VISUAL.ENTITY <entity>)
 #    (<entity> ^TYPE FOOD) 
@@ -122,7 +122,7 @@ sp {apply*eat*food
 # Propose: mover para a jóia mais próxima da LONGMEMORY, se o combustível for > 300
 
 # sp {propose*move*jewel
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^LONGMEMORY <memory>)
 #    (<creature> ^PARAMETERS.MINFUEL <minFuel>)
@@ -175,7 +175,7 @@ sp {apply*move*jewel
 
 # Propose*get*jewel:
 # sp {propose*get*jewel
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^SENSOR.VISUAL.ENTITY <entity>)
 #    (<entity> ^TYPE JEWEL) 
@@ -382,7 +382,7 @@ sp {pref*moveFood*moveJewel*moveFoodWins
 (<o> ^name moveFood)
 (<o> ^parameterFuel <threshold>)
 (<o2> ^name moveJewel)
-(<s> ^io.input-link <il>)
+(<s> ^IMIL <il>)
 (<il> ^CREATURE.SENSOR.FUEL <fuel>)
 (<fuel> ^VALUE <value> < <threshold>)        
 -->
@@ -393,7 +393,7 @@ sp {pref*moveFood*moveJewel*moveFoodWins
 sp {pref*moveFood*moveJewel*moveJewelWins
 (state <s> ^operator <o> + 
                      <o2> +)
-(<s> ^io.input-link <il>)
+(<s> ^IMIL <il>)
 (<o> ^name moveFood)
 (<o> ^parameterFuel <threshold>)
 (<o2> ^name moveJewel)
@@ -407,7 +407,7 @@ sp {pref*moveFood*moveJewel*moveJewelWins
 sp {pref*moveFood*moveJewel*tie
 (state <s> ^operator <o> + 
                      <o2> +)
-(<s> ^io.input-link <il>)
+(<s> ^IMIL <il>)
 (<o> ^name moveFood)
 (<o> ^parameterFuel <threshold>)
 (<o2> ^name moveJewel)
@@ -477,7 +477,7 @@ sp {apply*initialize
    (<il> ^CREATURE <c>)
 -->
    (write |initialize DEEPCOPY|)
-   (<s> ^IMGCREATURE (deep-copy <c>))
+   (<s> ^IMGIL (deep-copy <il>))
    (<s> ^PLAN <p>)
    (<p> ^step 0)
 }
@@ -486,7 +486,7 @@ sp {apply*initialize
 # DELIVER
 
 # sp {propose*deliver*leaflet*L1
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^LEAFLET.L1READY <l1> 1.0)
 # -->
@@ -495,7 +495,7 @@ sp {apply*initialize
 # }
 
 # sp {propose*deliver*leaflet*L2
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^LEAFLET.L2READY <l2> 1.0)
 # -->
@@ -504,7 +504,7 @@ sp {apply*initialize
 # }
 
 # sp {propose*deliver*leaflet*L3
-#    (state <s> ^io.input-link <il>)
+#    (state <s> ^IMIL <il>)
 #    (<il> ^CREATURE <creature>)
 #    (<creature> ^LEAFLET.L3READY <l3> 1.0)
 # -->
@@ -578,16 +578,16 @@ sp {apply*get*jewel*count*greater*deliberativo
 
 ##### DELIBERATE FINISH ###########
 
-sp {propose*exit*deliberation
-   (state <s> ^name resolve-tie
-              ^CREATURE <creature>)
-   (<creature> ^LEAFLETS <leaflet>)
-   - (<leaflet> ^ENTITY <entity>) 
--->
-   (write | DELIBERATING..... OPERATOR EXIT DELIBERATION|)
-   (<s> ^operator <o> +)
-   (<o> ^name exit-deliberation)
-}
+# sp {propose*exit*deliberation
+#    (state <s> ^name resolve-tie
+#               ^CREATURE <creature>)
+#    (<creature> ^LEAFLETS <leaflet>)
+#    - (<leaflet> ^ENTITY <entity>) 
+# -->
+#    (write | DELIBERATING..... OPERATOR EXIT DELIBERATION|)
+#    (<s> ^operator <o> +)
+#    (<o> ^name exit-deliberation)
+# }
 
 sp {apply*exit*deliberation
    (state <s> ^name resolve-tie

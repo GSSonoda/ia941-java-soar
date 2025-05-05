@@ -182,6 +182,12 @@ public class SoarBridge
         return l1.getItems().containsKey(color) || l2.getItems().containsKey(color) || l3.getItems().containsKey(color);
     }
 
+    private void createBagItem(Identifier bag, String color, float count) {
+        Identifier item = CreateIdWME(bag, "ITEM");
+        CreateStringWME(item, "COLOR", color);
+        CreateFloatWME(item, "COUNT", count);
+    }
+
     /**
      * @autor g.sonoda
      * Incluir novos InputLinks como
@@ -301,12 +307,37 @@ public class SoarBridge
                 }
                 System.out.println("Closest food: " + closestFood.getName());
                 System.out.println("Closest jewel: " + closestJewel.getName());
-                
-                bag = c.updateBag();
+                c.updateBag();
+                bag = c.getBag();
+                if(bag != null) {
+                  Identifier bag_soar = CreateIdWME(creature, "BAG");
+                  Map<String, String> bagMap = bag.getMap();
+                  createBagItem(bag_soar, "Red", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_RED)));
+                  createBagItem(bag_soar, "Green", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_GREEN)));
+                  createBagItem(bag_soar, "Blue", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_BLUE)));
+                  createBagItem(bag_soar, "Yellow", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_YELLOW)));
+                  createBagItem(bag_soar, "Magenta", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_MAGENTA)));
+                  createBagItem(bag_soar, "White", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_WHITE)));
+                }
+
                 Identifier leaflet = CreateIdWME(creature, "LEAFLET");
                 CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
                 CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);         }
+                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);
+
+                for (Leaflet l : c.getLeaflets()) {
+                    CreateStringWME(leaflet, "ID", l.getID().toString());
+                    CreateFloatWME(leaflet, "PAYMENT", l.getPayment());
+                    CreateFloatWME(leaflet, "SITUATION", l.getSituation());
+                    for (Iterator<String> iter = l.getItems().keySet().iterator(); iter.hasNext();) {
+                      String color = iter.next();
+                      int needed = l.getItems().get(color)[0];
+                      Identifier item = CreateIdWME(leaflet, "ITEM");
+                      CreateStringWME(item, "COLOR", color);
+                      CreateFloatWME(item, "NEEDED", needed);
+                    }
+                }
+            }     
         }
         catch (Exception e)
         {
