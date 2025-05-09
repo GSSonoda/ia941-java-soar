@@ -53,6 +53,8 @@ public class SoarBridge
     Identifier creatureParameters;
     Identifier creaturePosition;
     Identifier creatureMemory;
+    Identifier creatureLeaflets;
+    int current_leaflet;
     
     Environment env;
     public Creature c;
@@ -90,6 +92,7 @@ public class SoarBridge
 
             // Initialize entities
             creature = null;
+            current_leaflet = 0;
 
             // Debugger line
             if (startSOARDebugger)
@@ -299,7 +302,6 @@ public class SoarBridge
                     CreateFloatWME(closestFoodWME, "Y", (float) closestFood.getY1());
                 }
                 if (closestJewel != null) {
-
                     CreateStringWME(closestJewelWME, "NAME", closestJewel.getName());
                     CreateFloatWME(closestJewelWME, "X", (float) closestJewel.getX1());
                     CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
@@ -320,23 +322,27 @@ public class SoarBridge
                   createBagItem(bag_soar, "White", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_WHITE)));
                 }
 
-                Identifier leaflet = CreateIdWME(creature, "LEAFLET");
-                CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);
-
-                for (Leaflet l : c.getLeaflets()) {
-                    CreateStringWME(leaflet, "ID", l.getID().toString());
-                    CreateFloatWME(leaflet, "PAYMENT", l.getPayment());
-                    CreateFloatWME(leaflet, "SITUATION", l.getSituation());
-                    for (Iterator<String> iter = l.getItems().keySet().iterator(); iter.hasNext();) {
-                      String color = iter.next();
-                      int needed = l.getItems().get(color)[0];
-                      Identifier item = CreateIdWME(leaflet, "ITEM");
-                      CreateStringWME(item, "COLOR", color);
-                      CreateFloatWME(item, "NEEDED", needed);
-                    }
+                creatureLeaflets = CreateIdWME(creature, "LEAFLETS");
+                Identifier creatureLeafletsLeafletMissing = CreateIdWME(creatureLeaflets, "JEWELS");
+                HashMap<String, Integer> accumulatedResults = new HashMap<>();
+                int i = current_leaflet;
+                Identifier creatureLeafletsLeaflet = CreateIdWME(creatureLeaflets, "LEAFLET");
+                CreateFloatWME(creatureLeafletsLeaflet, "ID", c.getLeaflets().get(i).getID());
+                CreateFloatWME(creatureLeafletsLeaflet, "PAYMENT", c.getLeaflets().get(i).getPayment());
+                CreateFloatWME(creatureLeafletsLeaflet, "SITUATION", c.getLeaflets().get(i).getSituation());
+                HashMap<String, Integer> result = c.getLeaflets().get(i).getWhatToCollect();
+                for (Map.Entry<String, Integer> entry : result.entrySet()) {
+                    String key = entry.getKey();
+                    Integer value = entry.getValue();
+                    accumulatedResults.put(key, accumulatedResults.getOrDefault(key, 0) + value);
                 }
+                for (Map.Entry<String, Integer> entry : accumulatedResults.entrySet()) {
+                    String key = entry.getKey();
+                    Integer value = entry.getValue();
+                    CreateFloatWME(creatureLeafletsLeafletMissing, key, value);
+                }
+
+
             }     
         }
         catch (Exception e)

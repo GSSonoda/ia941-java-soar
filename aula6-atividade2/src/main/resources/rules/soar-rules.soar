@@ -5,28 +5,173 @@ epmem --set learning off
 #smem --off
 #log --level error
 
-###################################  WANDER  ###################################
-# This operator will make the agent to walk ahead at the enviroment
-# Propose*wander:
-# sp {propose*wander
-#    (state <s> ^IMIL <il>)
-# -->
-#    (<s> ^operator <o> +)
-#    (<o> ^name wander)}
+################################  DEEP COPY IL
+sp {propose*initialize
+   (state <s> ^superstate nil
+             -^IMGIL)
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name initialize)
+}
+sp {apply*initialize
+   (state <s> ^operator.name initialize)
+   (<ss> ^io.input-link <il>)
+   (<il> ^CREATURE <c>)
+-->
+   (write |initialize DEEPCOPY|)
+   (<s> ^IMGIL (deep-copy <il>))
+}
+
+################################  PLAN
+sp {propose*plan
+   (state <s> ^io.output-link <ol>)
+   -(<ol> ^plan <p>)
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name create-plan)
+}
+sp {apply*plan
+   (state <s> ^operator <o>)
+   (<s> ^io.output-link <ol>)
+   (<o> ^name create-plan)
+-->
+   (<ol> ^plan <p>)
+   (<p> ^step 0)
+}
+
+sp {propose*operator*sucess
+   (state <s> ^io.output-link <ol>)
+   (<s> ^subgoal 1)
    
-# Apply*wander:
-# If the wander operator is selected, then generate an output command to it 
-# sp {apply*wander
-#    (state <s> ^operator <o>
-#               ^io <io>)
-#    (<io> ^output-link <ol>)
-#    (<o> ^name wander)
-# -->
-#    (<ol> ^MOVE <command>)
-#    (<command> ^Vel 0)
-#    (<command> ^VelR 2)
-#    (<command> ^VelL 0)
-# }
+   (<ol> ^plan <p>)
+   (<p> ^step <stepNumber>)
+   (<p> ^<number> <cm>)
+   (<cm> ^DELIVERY <command>)
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name OperatorSucess)
+}
+sp {apply*operator*sucess
+    (state <s> ^io.output-link <ol>)
+    (<s> ^operator.name OperatorSucess)
+    (<ol> ^plan <plan>)
+    (<plan> ^0 <command>)
+    (<command> ^<action> <a>)
+-->
+    (<ol> ^<action> <a>)
+    (<s> ^subgoal 0)
+    (interrupt)
+}
+
+sp {propose*operator*failure
+   (state <s> ^io.output-link <ol>)
+   (<s> ^subgoal 1)
+   (<ol> ^plan <plan>)
+   (<plan> ^<number> <command>)
+   -(<command> ^DELIVERY <a>)
+   -(<ol> ^MOVE <anything>)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name OperatorFail)
+}
+sp {apply*operator*failure
+    (state <s> ^io.output-link <ol>)
+    (<s> ^operator <o>)
+    (<o> ^name OperatorFail)
+-->
+   # Girando...
+    (<ol> ^MOVE <COMANDO>)
+    (<COMANDO> ^Vel 0)
+    (<COMANDO> ^VelR 2)
+    (<COMANDO> ^VelL 0)
+    (<s> ^subgoal 0)
+    (interrupt)
+}
+
+################################ LEAFLETS Counter
+sp {propose*set*situation
+   (state <s> ^io.input-link <il>)
+   (<s> ^io.output-link <ol>)
+   (<s> ^CREATURE <creature>)
+
+   (<creature> ^LEAFLETS.JEWELS <joiaValida>)
+   (<joiaValida> -^<jewelColor> <faltante> > 0)
+
+   (<creature> ^LEAFLETS.LEAFLET <leaflet>)
+   (<leaflet> ^SITUATION 0.0)
+
+--> 
+   (<s> ^operator <o> +)
+   (<o> ^name OperatorSituation)
+}
+sp {apply*set*situation
+   (state <s> ^io.input-link <il>)
+   (<s> ^io.output-link <ol>)
+   (<s> ^CREATURE <creature>)
+
+   (<s> ^operator <o>)
+   (<o> ^name OperatorSituation)
+
+   (<creature> ^LEAFLETS.LEAFLET <leaflet>)
+   (<leaflet> ^SITUATION <situation>)
+--> 
+   (<leaflet> ^SITUATION <situation> -)
+   (<leaflet> ^SITUATION 1.0)
+}
+
+################################ DELIVER
+sp {propose*deliver
+   (state <s> ^io.input-link <il>)
+   (<s> ^CREATURE <creature>)
+   (<creature> ^SENSOR.VISUAL <memory>)
+   (<memory> ^ENTITY <entityInMemory>)
+   (<creature> ^POSITION <creaturePosition>)
+   (<creaturePosition> ^X <creaturePositionX>)
+   (<creaturePosition> ^Y <creaturePositionY>)
+
+   # (<entityInMemory> ^TYPE DELIVERY)
+   # (<entityInMemory> ^X <entityInMemoryPositionX>)
+   # (<entityInMemory> ^Y <entityInMemoryPositionY>)
+   # (<entityInMemory> ^DISTANCE <distance> > 30)
+
+   (<creature> ^LEAFLETS.LEAFLET <leaflet>)
+   (<leaflet> ^SITUATION 1.0)
+   (<leaflet> ^ID <leafletId>)
+
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name OperatorDeliver)
+   # (<o> ^parameter <spot>)
+   # (<spot> ^X <entityInMemoryPositionX>)
+   # (<spot> ^Y <entityInMemoryPositionY>)
+   # (<spot> ^ID <leafletId>)
+}
+sp {apply*deliver
+   (state <s> ^operator <o>
+              ^io <io>)
+   (<io> ^input-link <il>)             
+   (<io> ^output-link <ol>)
+
+   (<o> ^name OperatorDeliver)
+   (<o> ^parameter <food>)
+   (<food> ^X <x>)
+   (<food> ^Y <y>)
+
+   (<s> ^CREATURE <creature>)
+   (<ol> ^plan <p>)
+   (<p> ^step <stepNumber>)
+-->
+   (<p> ^step <stepNumber> -)
+   (<p> ^step (+ <stepNumber> 1))
+   (<p> ^<stepNumber> <cm>)
+   (<cm> ^MOVE <command>)
+   (<command> ^Vel 3)
+   (<command> ^VelR 3)
+   (<command> ^VelL 3)
+   (<command> ^X <x>)
+   (<command> ^Y <y>)
+}
+
 
 # @autor g.sonoda
 ##############################  MOVE FOOD  #####################################
@@ -463,24 +608,7 @@ sp {halt*condition
    (interrupt) 
 }
 
-####### DEEP COPY  + PLAN #######
-sp {propose*initialize
-   (state <s> ^superstate nil
-             -^IMGCREATURE)
--->
-   (<s> ^operator <o> + >)
-   (<o> ^name initialize)
-}
-sp {apply*initialize
-   (state <s> ^operator.name initialize)
-   (<ss> ^io.input-link <il>)
-   (<il> ^CREATURE <c>)
--->
-   (write |initialize DEEPCOPY|)
-   (<s> ^IMGIL (deep-copy <il>))
-   (<s> ^PLAN <p>)
-   (<p> ^step 0)
-}
+
 
 # @autor g.sonoda
 # DELIVER
@@ -512,15 +640,15 @@ sp {apply*initialize
 #    (<o> ^name deliverLeaflet)
 # }
 
-sp {apply*deliver*leaflet
-   (state <s> ^operator <o>
-              ^io <io>)
-   (<io> ^output-link <ol>)
-   (<o> ^name deliverLeaflet)
--->
-   (<ol> ^DELIVER <command>)
-   (<command> ^execute true)
-}
+# sp {apply*deliver*leaflet
+#    (state <s> ^operator <o>
+#               ^io <io>)
+#    (<io> ^output-link <ol>)
+#    (<o> ^name deliverLeaflet)
+# -->
+#    (<ol> ^DELIVER <command>)
+#    (<command> ^execute true)
+# }
 
 
 
@@ -544,36 +672,36 @@ sp {apply*deliver*leaflet
 #    (<jewel> ^COLOR <jewelColor>)
 # }
 
-sp {apply*get*jewel*count*greater*deliberativo
-    (state <s> ^name resolve-tie
-               ^operator <o>
-               ^CREATURE <creature>)
-    (<o> ^name getJewelInPlanning)
-    (<s> ^superstate <ss>)
-    (<ss> ^io.output-link <ol>)
-    (<ol> ^PLAN <P>)
-    (<P> ^step <V>)
-    (<o> ^parameter <param>)
-    (<param> ^COLOR <jewelColor>)
-    (<creature> ^LEAFLETS <lf>)
-    (<lf> ^ENTITY <entity>)
-    (<entity> ^COLOR <jewelColor>)
-    (<entity> ^REQUIRED <req>)
-    (<param> ^NAME <jewelName>)
-    (<creature> ^SENSOR <sensor>)
-    (<sensor> ^VISUAL <visual>)
-    (<visual> ^ENTITY <entityToRemove>)
-    (<entityToRemove> ^NAME <jewelName>)
-    (<entity> ^REQUIRED > 1)
--->
-    (write | DELIBERATING..... APPLY GET|)
-    (<visual> ^ENTITY <entityToRemove> -)
-    (<entity> ^REQUIRED <req> -)                 
-    (<entity> ^REQUIRED (- <req> 1))                
-    (<P> ^step <new-step>)
-    (<new-step> ^Command GET
-                ^Name <jewelName>)
-}
+# sp {apply*get*jewel*count*greater*deliberativo
+#     (state <s> ^name resolve-tie
+#                ^operator <o>
+#                ^CREATURE <creature>)
+#     (<o> ^name getJewelInPlanning)
+#     (<s> ^superstate <ss>)
+#     (<ss> ^io.output-link <ol>)
+#     (<ol> ^PLAN <P>)
+#     (<P> ^step <V>)
+#     (<o> ^parameter <param>)
+#     (<param> ^COLOR <jewelColor>)
+#     (<creature> ^LEAFLETS <lf>)
+#     (<lf> ^ENTITY <entity>)
+#     (<entity> ^COLOR <jewelColor>)
+#     (<entity> ^REQUIRED <req>)
+#     (<param> ^NAME <jewelName>)
+#     (<creature> ^SENSOR <sensor>)
+#     (<sensor> ^VISUAL <visual>)
+#     (<visual> ^ENTITY <entityToRemove>)
+#     (<entityToRemove> ^NAME <jewelName>)
+#     (<entity> ^REQUIRED > 1)
+# -->
+#     (write | DELIBERATING..... APPLY GET|)
+#     (<visual> ^ENTITY <entityToRemove> -)
+#     (<entity> ^REQUIRED <req> -)                 
+#     (<entity> ^REQUIRED (- <req> 1))                
+#     (<P> ^step <new-step>)
+#     (<new-step> ^Command GET
+#                 ^Name <jewelName>)
+# }
 
 
 ##### DELIBERATE FINISH ###########
@@ -589,11 +717,11 @@ sp {apply*get*jewel*count*greater*deliberativo
 #    (<o> ^name exit-deliberation)
 # }
 
-sp {apply*exit*deliberation
-   (state <s> ^name resolve-tie
-              ^operator <o>)
-   (<o> ^name exit-deliberation)
--->
-   (write | DELIBERATING..... APPLY EXIT DELIBERATION |)
-   (<s> ^result fim)
-}
+# sp {apply*exit*deliberation
+#    (state <s> ^name resolve-tie
+#               ^operator <o>)
+#    (<o> ^name exit-deliberation)
+# -->
+#    (write | DELIBERATING..... APPLY EXIT DELIBERATION |)
+#    (<s> ^result fim)
+# }
