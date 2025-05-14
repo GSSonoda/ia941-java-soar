@@ -400,6 +400,7 @@ sp {propor_entregar_leaflet
    (<leaflet> ^SITUATION <situation> > 0)    
    (<leaflet> ^ID <leafletID>)
    (<leaflet> ^PAYMENT <payment>)
+   (<leaflet> ^NAME <leafletName>)
    -->
    (<s> ^operator <o> + =)
    (<o> ^name operadorEntregarLeaflet)
@@ -415,6 +416,7 @@ sp {aplicar_entregar_leaflet
    (<il> ^CREATURE <creature>) 
    (<creature> ^LEAFLET <leaflet>)
    (<leaflet> ^ID <memoryID> <leafletID>)
+   (<leaflet> ^NAME <leafletName>)
    - (<ol> ^DELIVER <anything>)
    (<s> ^plan <p>)
    (<p> ^step <stepNumber>)
@@ -428,6 +430,7 @@ sp {aplicar_entregar_leaflet
    (<leaflet> ^SITUATION 0.0)
    (<s> ^status sucess)
    (write | DELIBERANDO... PASSO: | <stepNumber> (crlf))
+   (write | PLANO ATUAL => Completar Leaflet : | <leafletName> (crlf))
    # (write |ENTREGAR LEAFLET: | <leafletID> (crlf))
    #(halt)
 }

@@ -330,10 +330,12 @@ public class SoarBridge
                     CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
                     CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
                 }                
-                bag = c.updateBag();
+                bag = c.updateBag(); 
+                int leafletCounter = 1; // contador para nomear os leaflets como L1, L2, ...
                 for (Leaflet l : c.getLeaflets()) {
                     Identifier leaflet = CreateIdWME(creature, "LEAFLET");
                     CreateStringWME(leaflet, "ID", l.getID().toString());
+                    CreateStringWME(leaflet, "NAME", "L" + leafletCounter);
                     CreateFloatWME(leaflet, "PAYMENT", l.getPayment());
                     CreateFloatWME(leaflet, "SITUATION", l.getSituation());
                     for (Iterator<String> iter = l.getItems().keySet().iterator(); iter.hasNext();) {
@@ -344,6 +346,7 @@ public class SoarBridge
                         CreateFloatWME(item, "NEEDED", needed);
                     }
                     CreateFloatWME(leaflet, "READY", bagSatisfiesLeaflet(bag, l) ? 1.0f : 0.0f);
+                    leafletCounter++; 
                 }    
                 if(bag != null) {
                     Identifier wme_bag = CreateIdWME(creature, "BAG");
