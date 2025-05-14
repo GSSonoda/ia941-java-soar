@@ -289,8 +289,9 @@ public class SoarBridge
 
                 for (Thing food : knownFoods.values()) {
                     double foodDistance = GetGeometricDistanceToCreature(food.getX1(), food.getY1(), food.getX2(), food.getY2(), c.getPosition().getX(), c.getPosition().getY());
-                    Identifier foodWME = CreateIdWME(creatureLongMemory, "FOOD");
+                    Identifier foodWME = CreateIdWME(creatureLongMemory, "ENTITY");
                     CreateStringWME(foodWME, "NAME", food.getName());
+                    CreateStringWME(foodWME, "TYPE", "FOOD");
                     CreateFloatWME(foodWME, "X", (float) food.getX1());
                     CreateFloatWME(foodWME, "Y", (float) food.getY1());
                     if (foodDistance < closestFoodDistance) {
@@ -301,8 +302,9 @@ public class SoarBridge
                 for (Thing jewel : knownJewels.values()) {
                     double jewelDistance = GetGeometricDistanceToCreature(jewel.getX1(), jewel.getY1(), jewel.getX2(), jewel.getY2(), c.getPosition().getX(), c.getPosition().getY());
                     String color = Constants.getColorName(jewel.getMaterial().getColor());
-                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "JEWELS");
+                    Identifier jewelsWME = CreateIdWME(creatureLongMemory, "ENTITY");
                     CreateStringWME(jewelsWME, "NAME", jewel.getName());
+                    CreateStringWME(jewelsWME, "TYPE", "JEWEL");
                     CreateFloatWME(jewelsWME, "X", (float) jewel.getX1());
                     CreateFloatWME(jewelsWME, "Y", (float) jewel.getY1());
                     CreateStringWME(jewelsWME, "COLOR", color);
@@ -328,27 +330,43 @@ public class SoarBridge
                     CreateFloatWME(closestJewelWME, "Y", (float) closestJewel.getY1());
                     CreateStringWME(closestJewelWME, "COLOR", Constants.getColorName(closestJewel.getMaterial().getColor()));
                 }                
-                // bag = c.updateBag();
-                Identifier leaflet = CreateIdWME(creature, "LEAFLET");
-                Identifier leaflet_l1 = CreateIdWME(leaflet, "L1");
-                Identifier leaflet_l2 = CreateIdWME(leaflet, "L2");
-                Identifier leaflet_l3 = CreateIdWME(leaflet, "L3");
-                CreateFloatWME(leaflet_l1, "PAYMENT", l1.getPayment());
-                CreateFloatWME(leaflet_l2, "PAYMENT", l2.getPayment());
-                CreateFloatWME(leaflet_l3, "PAYMENT", l3.getPayment());
-                CreateFloatWME(leaflet_l1, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l1) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet_l2, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l2) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet_l3, "PLAY", knownJewelsSatisfyLeaflet(knownJewels, l3) ? 1.0f : 0.0f);
-
-                CreateFloatWME(leaflet, "L1READY", bagSatisfiesLeaflet(bag, l1) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L2READY", bagSatisfiesLeaflet(bag, l2) ? 1.0f : 0.0f);
-                CreateFloatWME(leaflet, "L3READY", bagSatisfiesLeaflet(bag, l3) ? 1.0f : 0.0f);         }
+                bag = c.updateBag();
+                for (Leaflet l : c.getLeaflets()) {
+                    Identifier leaflet = CreateIdWME(creature, "LEAFLET");
+                    CreateStringWME(leaflet, "ID", l.getID().toString());
+                    CreateFloatWME(leaflet, "PAYMENT", l.getPayment());
+                    CreateFloatWME(leaflet, "SITUATION", l.getSituation());
+                    for (Iterator<String> iter = l.getItems().keySet().iterator(); iter.hasNext();) {
+                        String color = iter.next();
+                        int needed = l.getItems().get(color)[0];
+                        Identifier item = CreateIdWME(leaflet, "ITEM");
+                        CreateStringWME(item, "COLOR", color);
+                        CreateFloatWME(item, "NEEDED", needed);
+                    }
+                    CreateFloatWME(leaflet, "READY", bagSatisfiesLeaflet(bag, l) ? 1.0f : 0.0f);
+                }    
+                if(bag != null) {
+                    Identifier wme_bag = CreateIdWME(creature, "BAG");
+                    Map<String, String> bagMap = bag.getMap();
+                    createBagItem(wme_bag, "Red", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_RED)));
+                    createBagItem(wme_bag, "Green", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_GREEN)));
+                    createBagItem(wme_bag, "Blue", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_BLUE)));
+                    createBagItem(wme_bag, "Yellow", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_YELLOW)));
+                    createBagItem(wme_bag, "Magenta", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_MAGENTA)));
+                    createBagItem(wme_bag, "White", Float.parseFloat(bagMap.get(Constants.TOKEN_BAG_CRYSTAL_WHITE)));
+                }  
+            }
         }
         catch (Exception e)
         {
             logger.severe("Error while Preparing Input Link");
             e.printStackTrace();
         }
+    }
+    private void createBagItem(Identifier bag, String color, float count) {
+        Identifier item = CreateIdWME(bag, "ITEM");
+        CreateStringWME(item, "COLOR", color);
+        CreateFloatWME(item, "COUNT", count);
     }
 
     private double GetGeometricDistanceToCreature(double x1, double y1, double x2, double y2, double xCreature, double yCreature)
@@ -676,7 +694,8 @@ public class SoarBridge
      * Trocar joias por pontos
      */
     private void processDeliverCommand(CommandDeliver soarCommandDeliver) throws CommandExecException {
-        if (bagSatisfiesLeaflet(bag, l1)){
+        System.out.println("processDeliverCommand");
+        if (bagSatisfiesLeaflet(bag, l1)){            
             c.deliverLeaflet(l1.getID().toString());
             bag = c.updateBag();
         }
