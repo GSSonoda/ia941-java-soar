@@ -30,7 +30,7 @@ public class Environment
         try {
         w = proxy.getWorld();
         w.reset();
-        c = proxy.createCreature(400,300,0,0);
+        c = proxy.createCreature(400,300,1,1);
         c.start();
         w.grow(1);
 
